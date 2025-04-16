@@ -1,0 +1,15 @@
+I want a web based ERP application that can be deployed via something like Vercel.com.  Please include all instructions needed for deploying it.  Here are the requirements of the application:  
+one of the efficiency elements is our data entry. We get trucking tickets for materials and hourly trucking. The projects have to log the tickets and info in a google sheet that my accountants check to ensure the invoice rate matches the operation. Then we code the invoice to the correct cost phase, based on what is in the log. The google sheet has conditional formatting to check against duplicate tickets being charged on invoices.
+
+We have to log hundreds if not thousands of tickets every month
+
+
+Also the logs have to be checked at end of the months to see how many tickets didn’t get invoiced. I have to accrue the cost until the invoices come in.
+
+
+Another thing is comparing materials to the freight. Sometimes materials are bought from a supplier and we send our trucking contractor to pick it up. We need to check each month that the two numbers are aligning. What truck took what material ticket.
+
+
+Another issue.
+
+We get paid for a certain scope. Let’s say 48” concrete pipe. Well there is a revenue side and a cost side. Let’s say we originally were going to install 5000LF of the pipe but the owner decided to add more, say another 1,000LF. If I forecast the revenue side, I then have to go to the cost side and increase the cost codes to reflect the new amount. The revue side is usually one line. The cost side may have multiple lines with different unit of measure and different cost types. Installing pipe means I have to buy more pipe, dig more trench, purchase more rock bedding material, haul in more rock, etc. it would be nice to setup up something like for each LF change these codes change by this much etc etc

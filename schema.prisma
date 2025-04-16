@@ -1,0 +1,226 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String    // Hashed password
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  projects      Project[]
+  tickets       TruckingTicket[]
+  invoices      Invoice[]
+  materialPurchases MaterialPurchase[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  ACCOUNTANT
+  USER
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime?
+  status        ProjectStatus @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  costPhases    CostPhase[]
+  scopeItems    ScopeItem[]
+  tickets       TruckingTicket[]
+  invoices      Invoice[]
+  materialPurchases MaterialPurchase[]
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+model CostPhase {
+  id            String    @id @default(cuid())
+  name          String
+  code          String    // Cost code identifier
+  description   String?
+  unitOfMeasure String    // e.g., LF, CY, EA
+  unitCost      Float
+  quantity      Float
+  totalCost     Float
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  invoices      Invoice[]
+  scopeItemRelations ScopeItemCostRelation[]
+}
+
+model ScopeItem {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  unitOfMeasure String    // e.g., LF, CY, EA
+  quantity      Float
+  unitRevenue   Float
+  totalRevenue  Float
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  costRelations ScopeItemCostRelation[]
+}
+
+model ScopeItemCostRelation {
+  id            String    @id @default(cuid())
+  ratio         Float     // How much of the cost phase is affected by this scope item
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  scopeItemId   String
+  scopeItem     ScopeItem @relation(fields: [scopeItemId], references: [id])
+  costPhaseId   String
+  costPhase     CostPhase @relation(fields: [costPhaseId], references: [id])
+}
+
+model Material {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  unitOfMeasure String    // e.g., Tons, CY, EA
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  tickets       TruckingTicket[]
+  purchases     MaterialPurchase[]
+}
+
+model TruckingContractor {
+  id            String    @id @default(cuid())
+  name          String
+  contactPerson String?
+  phone         String?
+  email         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  tickets       TruckingTicket[]
+}
+
+model TruckingTicket {
+  id            String    @id @default(cuid())
+  ticketNumber  String    @unique  // External ticket identifier
+  ticketDate    DateTime
+  quantity      Float?
+  hours         Float?    // For hourly trucking
+  rate          Float
+  totalAmount   Float
+  ticketType    TicketType
+  status        TicketStatus @default(LOGGED)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  materialId    String?
+  material      Material? @relation(fields: [materialId], references: [id])
+  contractorId  String
+  contractor    TruckingContractor @relation(fields: [contractorId], references: [id])
+  userId        String    // Who logged the ticket
+  user          User      @relation(fields: [userId], references: [id])
+  invoiceId     String?
+  invoice       Invoice?  @relation(fields: [invoiceId], references: [id])
+  materialPurchases MaterialPurchase[]
+}
+
+enum TicketType {
+  MATERIAL
+  HOURLY
+}
+
+enum TicketStatus {
+  LOGGED
+  INVOICED
+  DISPUTED
+  VOID
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique  // External invoice identifier
+  invoiceDate   DateTime
+  dueDate       DateTime
+  totalAmount   Float
+  status        InvoiceStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  costPhaseId   String
+  costPhase     CostPhase @relation(fields: [costPhaseId], references: [id])
+  userId        String    // Who processed the invoice
+  user          User      @relation(fields: [userId], references: [id])
+  tickets       TruckingTicket[]
+}
+
+enum InvoiceStatus {
+  PENDING
+  VERIFIED
+  PAID
+  DISPUTED
+}
+
+model MaterialPurchase {
+  id            String    @id @default(cuid())
+  purchaseDate  DateTime
+  quantity      Float
+  unitCost      Float
+  totalCost     Float
+  purchaseOrder String?   // PO number
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  materialId    String
+  material      Material  @relation(fields: [materialId], references: [id])
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  userId        String    // Who logged the purchase
+  user          User      @relation(fields: [userId], references: [id])
+  ticketId      String?   // Associated trucking ticket if applicable
+  ticket        TruckingTicket? @relation(fields: [ticketId], references: [id])
+}
